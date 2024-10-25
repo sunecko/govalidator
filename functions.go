@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"golang.org/x/exp/constraints"
 )
@@ -36,6 +37,7 @@ const (
 	validateUkPostCode  = "%s is not a valid UK PostCode"
 	validateIsNumeric   = "string %s is not a number"
 	validateEmail       = "invalid email"
+	validateCreditCard  = "invalid credit card number"
 )
 
 // StrLength will ensure a string, val, has a length that is at least min and
@@ -298,4 +300,44 @@ func Any[T comparable](val T, vv ...T) ValidationFunc {
 // Deprecated: use Any instead. Will be removed in a future release.
 func AnyString(val string, vv ...string) ValidationFunc {
 	return Any(val, vv...)
+}
+
+// CreditCard will check if the provided string is a valid credit card number.
+//
+// The Luhn algorithm is used to validate the number.
+func CreditCard(val string) ValidationFunc {
+	return func() error {
+		var sum int
+		double := false
+
+		if val == "" {
+			return errors.New(validateCreditCard)
+		}
+
+		for i := len(val) - 1; i >= 0; i-- {
+			digit := val[i]
+
+			if !unicode.IsDigit(rune(digit)) {
+				return errors.New(validateCreditCard)
+			}
+
+			n := int(digit - '0')
+
+			if double {
+				n *= 2
+				if n > 9 {
+					n -= 9
+				}
+			}
+
+			sum += n
+			double = !double
+		}
+
+		if sum%10 != 0 {
+			return errors.New(validateCreditCard)
+		}
+
+		return nil
+	}
 }

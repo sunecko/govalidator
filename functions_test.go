@@ -1005,3 +1005,36 @@ func TestAny(t *testing.T) {
 		})
 	}
 }
+
+func TestCreditCard(t *testing.T) {
+	t.Parallel()
+	is := is.New(t)
+
+	tt := map[string]struct {
+		cardNumber string
+		expErr     error
+	}{
+		"valid card": {
+			cardNumber: "49927398716",
+		},
+		"invalid card": {
+			cardNumber: "49927398717",
+			expErr:     errors.New("invalid credit card number"),
+		},
+		"non-numeric characters": {
+			cardNumber: "49927a98716",
+			expErr:     errors.New("invalid credit card number"),
+		},
+		"empty string": {
+			cardNumber: "",
+			expErr:     errors.New("invalid credit card number"),
+		},
+	}
+
+	for name, test := range tt {
+		t.Run(name, func(t *testing.T) {
+			is = is.NewRelaxed(t)
+			is.Equal(test.expErr, CreditCard(test.cardNumber)())
+		})
+	}
+}
